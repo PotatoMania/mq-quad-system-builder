@@ -1,6 +1,6 @@
-From ec55faf76f2db92e746e1b5f3ee8f2f5b9eb418d Mon Sep 17 00:00:00 2001
+From 7c5f2bbb62f412bcc85bbd0b5c4e6c82a03b4954 Mon Sep 17 00:00:00 2001
 From: Potato <nikko@faint.day>
-Date: Mon, 28 Aug 2023 18:51:59 +0800
+Date: Mon, 28 Aug 2023 21:41:41 +0800
 Subject: [PATCH 3/3] add defconfig for mq quad
 
 ---
@@ -10,7 +10,7 @@ Subject: [PATCH 3/3] add defconfig for mq quad
 
 diff --git a/configs/mangopi_mq_quad_defconfig b/configs/mangopi_mq_quad_defconfig
 new file mode 100644
-index 00000000..cf04a215
+index 00000000..81150691
 --- /dev/null
 +++ b/configs/mangopi_mq_quad_defconfig
 @@ -0,0 +1,28 @@
@@ -36,7 +36,7 @@ index 00000000..cf04a215
 +CONFIG_SYS_I2C_SPEED=400000
 +CONFIG_SPI_FLASH_MACRONIX=y
 +CONFIG_REGULATOR_AXP=y
-+CONFIG_AXP313_POWER=y
++CONFIG_AXP313A_POWER=y
 +CONFIG_AXP_DCDC3_VOLT=1500
 +CONFIG_SPI=y
 +CONFIG_USB_EHCI_HCD=y

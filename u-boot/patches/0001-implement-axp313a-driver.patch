@@ -1,31 +1,30 @@
-From cab821e58dbe2035e367c604ac20c3c4acf5ebd2 Mon Sep 17 00:00:00 2001
+From c9865408b554155d503cfa139ee34745d6c45d2e Mon Sep 17 00:00:00 2001
 From: Potato <nikko@faint.day>
-Date: Mon, 28 Aug 2023 16:43:14 +0800
-Subject: [PATCH 1/3] Implement AXP313 driver
+Date: Mon, 28 Aug 2023 21:36:11 +0800
+Subject: [PATCH 1/3] implement axp313a driver
 
-Both standalone one and driver model one(REGULATOR_AXP).
 ---
  arch/arm/mach-sunxi/pmic_bus.c          |  4 ++
  board/sunxi/board.c                     | 15 +++--
  drivers/power/Kconfig                   | 15 ++++-
  drivers/power/Makefile                  |  1 +
- drivers/power/axp313.c                  | 87 +++++++++++++++++++++++++
- drivers/power/regulator/axp_regulator.c | 15 +++++
- include/axp313.h                        | 30 +++++++++
+ drivers/power/axp313a.c                 | 87 +++++++++++++++++++++++++
+ drivers/power/regulator/axp_regulator.c | 27 ++++++++
+ include/axp313a.h                       | 30 +++++++++
  include/axp_pmic.h                      |  2 +
- 8 files changed, 162 insertions(+), 7 deletions(-)
- create mode 100644 drivers/power/axp313.c
- create mode 100644 include/axp313.h
+ 8 files changed, 174 insertions(+), 7 deletions(-)
+ create mode 100644 drivers/power/axp313a.c
+ create mode 100644 include/axp313a.h
 
 diff --git a/arch/arm/mach-sunxi/pmic_bus.c b/arch/arm/mach-sunxi/pmic_bus.c
-index c0908406..89d82f37 100644
+index c0908406..19c31b19 100644
 --- a/arch/arm/mach-sunxi/pmic_bus.c
 +++ b/arch/arm/mach-sunxi/pmic_bus.c
 @@ -23,6 +23,8 @@
  
  #define AXP305_I2C_ADDR			0x36
  
-+#define AXP313_I2C_ADDR			0x36
++#define AXP313A_I2C_ADDR		0x36
 +
  #define AXP221_CHIP_ADDR		0x68
  
@@ -34,13 +33,13 @@ index c0908406..89d82f37 100644
  		return AXP152_I2C_ADDR;
  	if (IS_ENABLED(CONFIG_AXP305_POWER))
  		return AXP305_I2C_ADDR;
-+	if (IS_ENABLED(CONFIG_AXP313_POWER))
-+		return AXP313_I2C_ADDR;
++	if (IS_ENABLED(CONFIG_AXP313A_POWER))
++		return AXP313A_I2C_ADDR;
  
  	/* Other AXP2xx and AXP8xx variants */
  	return AXP209_I2C_ADDR;
 diff --git a/board/sunxi/board.c b/board/sunxi/board.c
-index f321cd58..176ea282 100644
+index f321cd58..eba4dfa0 100644
 --- a/board/sunxi/board.c
 +++ b/board/sunxi/board.c
 @@ -584,7 +584,8 @@ void sunxi_board_init(void)
@@ -49,7 +48,7 @@ index f321cd58..176ea282 100644
  	defined CONFIG_AXP221_POWER || defined CONFIG_AXP305_POWER || \
 -	defined CONFIG_AXP809_POWER || defined CONFIG_AXP818_POWER
 +	defined CONFIG_AXP809_POWER || defined CONFIG_AXP818_POWER || \
-+	defined CONFIG_AXP313_POWER
++	defined CONFIG_AXP313A_POWER
  	power_failed = axp_init();
  
  	if (IS_ENABLED(CONFIG_AXP_DISABLE_BOOT_ON_POWERON) && !power_failed) {
@@ -58,7 +57,7 @@ index f321cd58..176ea282 100644
  	power_failed |= axp_set_dcdc1(CONFIG_AXP_DCDC1_VOLT);
  #endif
 -#if !defined(CONFIG_AXP305_POWER)
-+#if !defined(CONFIG_AXP305_POWER) && !defined(CONFIG_AXP313_POWER)
++#if !defined(CONFIG_AXP305_POWER) && !defined(CONFIG_AXP313A_POWER)
  	power_failed |= axp_set_dcdc2(CONFIG_AXP_DCDC2_VOLT);
 +#endif
 +#if !defined(CONFIG_AXP305_POWER)
@@ -66,7 +65,7 @@ index f321cd58..176ea282 100644
  #endif
 -#if !defined(CONFIG_AXP209_POWER) && !defined(CONFIG_AXP818_POWER)
 +#if !defined(CONFIG_AXP209_POWER) && !defined(CONFIG_AXP818_POWER) && \
-+	!defined(CONFIG_AXP313_POWER)
++	!defined(CONFIG_AXP313A_POWER)
  	power_failed |= axp_set_dcdc4(CONFIG_AXP_DCDC4_VOLT);
  #endif
  #if defined CONFIG_AXP221_POWER || defined CONFIG_AXP809_POWER || \
@@ -75,30 +74,30 @@ index f321cd58..176ea282 100644
  	power_failed |= axp_set_aldo1(CONFIG_AXP_ALDO1_VOLT);
  #endif
 -#if !defined(CONFIG_AXP305_POWER)
-+#if !defined(CONFIG_AXP305_POWER) && !defined(CONFIG_AXP313_POWER)
++#if !defined(CONFIG_AXP305_POWER) && !defined(CONFIG_AXP313A_POWER)
  	power_failed |= axp_set_aldo2(CONFIG_AXP_ALDO2_VOLT);
  #endif
 -#if !defined(CONFIG_AXP152_POWER) && !defined(CONFIG_AXP305_POWER)
 +#if !defined(CONFIG_AXP152_POWER) && !defined(CONFIG_AXP305_POWER) && \
-+	!defined(CONFIG_AXP313_POWER)
++	!defined(CONFIG_AXP313A_POWER)
  	power_failed |= axp_set_aldo3(CONFIG_AXP_ALDO3_VOLT);
  #endif
  #ifdef CONFIG_AXP209_POWER
 diff --git a/drivers/power/Kconfig b/drivers/power/Kconfig
-index 7f3b990d..325dfa5f 100644
+index 7f3b990d..7fe70d7b 100644
 --- a/drivers/power/Kconfig
 +++ b/drivers/power/Kconfig
 @@ -101,6 +101,15 @@ config AXP305_POWER
  	Select this to enable support for the axp305 pmic found on most
  	H616 boards.
  
-+config AXP313_POWER
-+	bool "axp313 pmic support"
++config AXP313A_POWER
++	bool "axp313a pmic support"
 +	depends on MACH_SUN50I_H616
 +	select AXP_PMIC_BUS
 +	select CMD_POWEROFF
 +	---help---
-+	Select this to enable support for the axp313 pmic found on some
++	Select this to enable support for the axp313a pmic found on some
 +	H616 boards.
 +
  config AXP809_POWER
@@ -109,13 +108,13 @@ index 7f3b990d..325dfa5f 100644
  config AXP_DCDC3_VOLT
  	int "axp pmic dcdc3 voltage"
 -	depends on AXP152_POWER || AXP209_POWER || AXP221_POWER || AXP809_POWER || AXP818_POWER
-+	depends on AXP152_POWER || AXP209_POWER || AXP221_POWER || AXP809_POWER || AXP818_POWER || AXP313_POWER
++	depends on AXP152_POWER || AXP209_POWER || AXP221_POWER || AXP809_POWER || AXP818_POWER || AXP313A_POWER
  	default 900 if AXP809_POWER || AXP818_POWER
  	default 1500 if AXP152_POWER
  	default 1250 if AXP209_POWER
  	default 1100 if MACH_SUN8I_R40
 -	default 1200 if MACH_SUN6I || MACH_SUN8I
-+	default 1200 if MACH_SUN6I || MACH_SUN8I || AXP313_POWER
++	default 1200 if MACH_SUN6I || MACH_SUN8I || AXP313A_POWER
  	---help---
  	Set the voltage (mV) to program the axp pmic dcdc3 at, set to 0 to
  	disable dcdc3.
@@ -123,28 +122,28 @@ index 7f3b990d..325dfa5f 100644
  	On A80 boards dcdc3 is used for VDD-CPUA(cluster 0) and should be 0.9V.
  	On A83T boards dcdc3 is used for VDD-CPUB(cluster 1) and should be 0.9V.
  	On R40 boards dcdc3 is VDD-SYS and VDD-GPU and should be 1.1V.
-+	On H616 boards with LPDDR3 and axp313, dcdc3 is VCC-DRAM and should be 1.2V.
-+	On H616 boards with DDR3(L) and axp313, dcdc3 is VCC-DRAM and should be 1.5V.
++	On H616 boards with LPDDR3 and axp313a, dcdc3 is VCC-DRAM and should be 1.2V.
++	On H616 boards with DDR3(L) and axp313a, dcdc3 is VCC-DRAM and should be 1.5V.
  
  config AXP_DCDC4_VOLT
  	int "axp pmic dcdc4 voltage"
 diff --git a/drivers/power/Makefile b/drivers/power/Makefile
-index ba64b2c5..c7ee4595 100644
+index ba64b2c5..f851f4a9 100644
 --- a/drivers/power/Makefile
 +++ b/drivers/power/Makefile
 @@ -12,6 +12,7 @@ obj-$(CONFIG_AXP152_POWER)	+= axp152.o
  obj-$(CONFIG_AXP209_POWER)	+= axp209.o
  obj-$(CONFIG_AXP221_POWER)	+= axp221.o
  obj-$(CONFIG_AXP305_POWER)	+= axp305.o
-+obj-$(CONFIG_AXP313_POWER)	+= axp313.o
++obj-$(CONFIG_AXP313A_POWER)	+= axp313a.o
  obj-$(CONFIG_AXP809_POWER)	+= axp809.o
  obj-$(CONFIG_AXP818_POWER)	+= axp818.o
  obj-$(CONFIG_EXYNOS_TMU)	+= exynos-tmu.o
-diff --git a/drivers/power/axp313.c b/drivers/power/axp313.c
+diff --git a/drivers/power/axp313a.c b/drivers/power/axp313a.c
 new file mode 100644
-index 00000000..c9b48003
+index 00000000..0f76c5f2
 --- /dev/null
-+++ b/drivers/power/axp313.c
++++ b/drivers/power/axp313a.c
 @@ -0,0 +1,87 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
@@ -156,7 +155,7 @@ index 00000000..c9b48003
 + * (C) Copyright 2014 Hans de Goede <hdegoede@redhat.com>
 + * (C) Copyright 2013 Oliver Schinagl <oliver@schinagl.nl>
 + * 
-+ * Based on axp313.c
++ * Based on axp313a.c
 + */
 +
 +#include <common.h>
@@ -165,9 +164,9 @@ index 00000000..c9b48003
 +#include <asm/arch/pmic_bus.h>
 +#include <axp_pmic.h>
 +
-+#define AXP313_DCDC3_1220MV_OFFSET 71
++#define AXP313A_DCDC3_1220MV_OFFSET 71
 +
-+static u8 axp313_mvolt_to_cfg(int mvolt, int min, int max, int div)
++static u8 axp313a_mvolt_to_cfg(int mvolt, int min, int max, int div)
 +{
 +	if (mvolt < min)
 +		mvolt = min;
@@ -183,20 +182,20 @@ index 00000000..c9b48003
 +	u8 cfg;
 +
 +	if (mvolt >= 1220)
-+		cfg = AXP313_DCDC3_1220MV_OFFSET +
-+			axp313_mvolt_to_cfg(mvolt, 1220, 1840, 20);
++		cfg = AXP313A_DCDC3_1220MV_OFFSET +
++			axp313a_mvolt_to_cfg(mvolt, 1220, 1840, 20);
 +	else
-+		cfg = axp313_mvolt_to_cfg(mvolt, 500, 1200, 10);
++		cfg = axp313a_mvolt_to_cfg(mvolt, 500, 1200, 10);
 +
 +	if (mvolt == 0)
-+		return pmic_bus_clrbits(AXP313_OUTPUT_CTRL1,
-+					AXP313_OUTPUT_CTRL1_DCDC3_EN);
++		return pmic_bus_clrbits(AXP313A_OUTPUT_CTRL1,
++					AXP313A_OUTPUT_CTRL1_DCDC3_EN);
 +
-+	ret = pmic_bus_write(AXP313_DCDC3_VOLTAGE, cfg);
++	ret = pmic_bus_write(AXP313A_DCDC3_VOLTAGE, cfg);
 +	if (ret)
 +		return ret;
 + 
-+	return pmic_bus_setbits(AXP313_OUTPUT_CTRL1,
++	return pmic_bus_setbits(AXP313A_OUTPUT_CTRL1,
 +				0x1f);
 +}
 +
@@ -209,13 +208,13 @@ index 00000000..c9b48003
 +	if (ret)
 +		return ret;
 +
-+	ret = pmic_bus_read(AXP313_CHIP_VERSION, &axp_chip_id);
++	ret = pmic_bus_read(AXP313A_CHIP_VERSION, &axp_chip_id);
 +	if (ret)
 +		return ret;
 +
 +	// From https://bbs.aw-ol.com/topic/2054/mq-quad-h616-%E4%B8%BB%E7%BA%BF%E5%86%85%E6%A0%B8%E7%BC%96%E8%AF%91%E8%B0%83%E8%AF%95%E8%AE%B0%E5%BD%95-u-boot-kernel-buildroot
-+	// There's no datasheet showing version registers of axp313
-+	if ((axp_chip_id & AXP313_CHIP_VERSION_MASK) != 0x4b)
++	// There's no datasheet showing version registers of axp313a
++	if ((axp_chip_id & AXP313A_CHIP_VERSION_MASK) != 0x4b)
 +		return -ENODEV;
 +
 +	return ret;
@@ -224,7 +223,7 @@ index 00000000..c9b48003
 +#if !CONFIG_IS_ENABLED(ARM_PSCI_FW) && !IS_ENABLED(CONFIG_SYSRESET_CMD_POWEROFF)
 +int do_poweroff(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 +{
-+	pmic_bus_write(AXP313_SHUTDOWN, AXP313_POWEROFF);
++	pmic_bus_write(AXP313A_SHUTDOWN, AXP313A_POWEROFF);
 +
 +	/* infinite loop during shutdown */
 +	while (1) {}
@@ -234,22 +233,34 @@ index 00000000..c9b48003
 +}
 +#endif
 diff --git a/drivers/power/regulator/axp_regulator.c b/drivers/power/regulator/axp_regulator.c
-index 02f320ea..777b319a 100644
+index 02f320ea..682c125f 100644
 --- a/drivers/power/regulator/axp_regulator.c
 +++ b/drivers/power/regulator/axp_regulator.c
-@@ -268,12 +268,27 @@ static const struct axp_regulator_plat axp813_regulators[] = {
+@@ -268,12 +268,39 @@ static const struct axp_regulator_plat axp813_regulators[] = {
  	{ }
  };
  
++static const u16 axp313a_dcdc1_table[] = {
++	500, 510, 520, 530, 540, 550, 560, 570, 580, 590, 600, 610,
++	620, 630, 640, 650, 660, 670, 680, 690, 700, 710, 720, 730,
++	740, 750, 760, 770, 780, 790, 800, 810, 820, 830, 840, 850, 
++	860, 870, 880, 890, 900, 910, 920, 930, 940, 950, 960, 970, 
++	980, 990, 1000, 1010, 1020, 1030, 1040, 1050, 1060, 1070, 
++	1080, 1090, 1100, 1110, 1120, 1130, 1140, 1150, 1160, 1170, 
++	1180, 1190, 1200, 1220, 1240, 1260, 1280, 1300, 1320, 1340, 
++	1360, 1380, 1400, 1420, 1440, 1460, 1480, 1500, 1520, 1540, 
++	1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 
++	2600, 2700, 2800, 2900, 3000, 3100, 3200, 3300, 3400,
++};
 +
-+/* 
-+ * dcdc1 of axp313 has a 100mV step after 1.54V, range from 1.6V to 3.4V,
-+ * disallow values above 1.54V.
++/* DCDC3's setting is deviating from the datasheet. The values
++ * here are taken from linux-6.5 which are taken from the
++ * BSP driver and have been confirmed by measurements.
 + */
-+static const struct axp_regulator_plat axp313_regulators[] = {
-+	{ "dcdc1", 0x10, BIT(0), 0x13, 0x7f,  500, 1540,  10, 70 },
++static const struct axp_regulator_plat axp313a_regulators[] = {
++	{ "dcdc1", 0x10, BIT(0), 0x13, 0x7f, .table = axp313a_dcdc1_table },
 +	{ "dcdc2", 0x10, BIT(1), 0x14, 0x7f,  500, 1540,  10, 70 },
-+	{ "dcdc3", 0x10, BIT(2), 0x15, 0x7f,  800, 1840,  10, 32 },
++	{ "dcdc3", 0x10, BIT(2), 0x15, 0x7f,  800, 1840,  10, 70 },
 +	{ "aldo1", 0x10, BIT(3), 0x16, 0x1f,  500, 3500, 100, NA },
 +	{ "dldo1", 0x10, BIT(4), 0x17, 0x1f,  500, 3500, 100, NA },
 +	{ }
@@ -261,55 +272,55 @@ index 02f320ea..777b319a 100644
  	[AXP209_ID]	= axp20x_regulators,
  	[AXP221_ID]	= axp22x_regulators,
  	[AXP223_ID]	= axp22x_regulators,
-+	[AXP313_ID]	= axp313_regulators,
++	[AXP313A_ID]	= axp313a_regulators,
  	[AXP803_ID]	= axp803_regulators,
  	[AXP806_ID]	= axp806_regulators,
  	[AXP809_ID]	= axp809_regulators,
-diff --git a/include/axp313.h b/include/axp313.h
+diff --git a/include/axp313a.h b/include/axp313a.h
 new file mode 100644
-index 00000000..b3ac186c
+index 00000000..1a35b739
 --- /dev/null
-+++ b/include/axp313.h
++++ b/include/axp313a.h
 @@ -0,0 +1,30 @@
 +/* SPDX-License-Identifier: GPL-2.0+ */
 +/* Based on axp305.h */
 +
-+enum axp313_reg {
-+	AXP313_CHIP_VERSION = 0x3,
-+	AXP313_OUTPUT_CTRL1 = 0x10,
-+	AXP313_DCDC3_VOLTAGE = 0x15,
-+	AXP313_SHUTDOWN = 0x1A,
++enum axp313a_reg {
++	AXP313A_CHIP_VERSION = 0x3,
++	AXP313A_OUTPUT_CTRL1 = 0x10,
++	AXP313A_DCDC3_VOLTAGE = 0x15,
++	AXP313A_SHUTDOWN = 0x1A,
 +};
 +
-+#define AXP313_CHIP_VERSION_MASK	0xcf
++#define AXP313A_CHIP_VERSION_MASK	0xcf
 +
 +// The default values of output voltage is "customized".
 +// So it's not sure this (partial) driver is suitable for other
-+// boards using axp313.
++// boards using axp313a.
 +// Normally only DRAM voltage need tweaking. Pay attention to
 +// the RAM chip used.
 +
-+// #define AXP313_OUTPUT_CTRL1_DCDC1_EN	(1 << 0)	// GPU
-+// #define AXP313_OUTPUT_CTRL1_DCDC2_EN	(1 << 1)	// CPU
-+#define AXP313_OUTPUT_CTRL1_DCDC3_EN	(1 << 2)	// DRAM
-+// #define AXP313_OUTPUT_CTRL1_ALDO1_EN	(1 << 3)	// 1v8 bus
-+// #define AXP313_OUTPUT_CTRL1_DLDO1_EN	(1 << 4)	// 3v3 bus
++// #define AXP313A_OUTPUT_CTRL1_DCDC1_EN	(1 << 0)	// GPU
++// #define AXP313A_OUTPUT_CTRL1_DCDC2_EN	(1 << 1)	// CPU
++#define AXP313A_OUTPUT_CTRL1_DCDC3_EN	(1 << 2)	// DRAM
++// #define AXP313A_OUTPUT_CTRL1_ALDO1_EN	(1 << 3)	// could be 1v8 bus
++// #define AXP313A_OUTPUT_CTRL1_DLDO1_EN	(1 << 4)	// could be 3v3 bus
 +
-+#define AXP313_POWEROFF			(1 << 7)
++#define AXP313A_POWEROFF			(1 << 7)
 +
-+#ifdef CONFIG_AXP313_POWER
++#ifdef CONFIG_AXP313A_POWER
 +#define AXP_POWER_STATUS		0x00
 +#define AXP_POWER_STATUS_ALDO_IN		BIT(0)
 +#endif
 diff --git a/include/axp_pmic.h b/include/axp_pmic.h
-index 4ac64865..2189ebd6 100644
+index 4ac64865..9b6d7d90 100644
 --- a/include/axp_pmic.h
 +++ b/include/axp_pmic.h
 @@ -13,6 +13,7 @@
  #include <axp209.h>
  #include <axp221.h>
  #include <axp305.h>
-+#include <axp313.h>
++#include <axp313a.h>
  #include <axp809.h>
  #include <axp818.h>
  
@@ -317,7 +328,7 @@ index 4ac64865..2189ebd6 100644
  	AXP209_ID,
  	AXP221_ID,
  	AXP223_ID,
-+	AXP313_ID,
++	AXP313A_ID,
  	AXP803_ID,
  	AXP806_ID,
  	AXP809_ID,
