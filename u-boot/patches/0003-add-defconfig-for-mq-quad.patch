@@ -1,0 +1,47 @@
+From ec55faf76f2db92e746e1b5f3ee8f2f5b9eb418d Mon Sep 17 00:00:00 2001
+From: Potato <nikko@faint.day>
+Date: Mon, 28 Aug 2023 18:51:59 +0800
+Subject: [PATCH 3/3] add defconfig for mq quad
+
+---
+ configs/mangopi_mq_quad_defconfig | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+ create mode 100644 configs/mangopi_mq_quad_defconfig
+
+diff --git a/configs/mangopi_mq_quad_defconfig b/configs/mangopi_mq_quad_defconfig
+new file mode 100644
+index 00000000..cf04a215
+--- /dev/null
++++ b/configs/mangopi_mq_quad_defconfig
+@@ -0,0 +1,28 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun50i-h616-mangopi-mq-quad"
++CONFIG_SPL=y
++CONFIG_DRAM_SUN50I_H616_DX_ODT=0x08080808
++CONFIG_DRAM_SUN50I_H616_DX_DRI=0x0e0e0e0e
++CONFIG_DRAM_SUN50I_H616_CA_DRI=0x0e0e
++CONFIG_DRAM_SUN50I_H616_TPR10=0xf83438
++CONFIG_MACH_SUN50I_H616=y
++CONFIG_SUNXI_DRAM_H616_DDR3_1333=y
++CONFIG_R_I2C_ENABLE=y
++CONFIG_SPL_SPI_SUNXI=y
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SPL_I2C=y
++CONFIG_CMD_BIND=y
++# CONFIG_NET is not set
++CONFIG_SPL_SYS_I2C_LEGACY=y
++CONFIG_SYS_I2C_MVTWSI=y
++CONFIG_SYS_I2C_SLAVE=0x7f
++CONFIG_SYS_I2C_SPEED=400000
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_REGULATOR_AXP=y
++CONFIG_AXP313_POWER=y
++CONFIG_AXP_DCDC3_VOLT=1500
++CONFIG_SPI=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_MUSB_GADGET=y
+-- 
+2.41.0
+
