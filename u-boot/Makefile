@@ -29,7 +29,7 @@ UBOOT_DEFCONFIG := mangopi_mq_quad_defconfig
 UBOOT_BUILD_PARAM :=
 # UBOOT_BUILD_PARAM += ARCH=$(ARCH)
 UBOOT_BUILD_PARAM += CROSS_COMPILE=$(CROSS_COMPILE)
-UBOOT_BUILD_PARAM += BL31=../$(ATF_BINARY)
+UBOOT_BUILD_PARAM += BL31=$(abspath $(ATF_BINARY))
 
 # Upstream u-boot does not support MQ Quad natively.
 # even the hardware developer uses orange pi zero 2 as a template
