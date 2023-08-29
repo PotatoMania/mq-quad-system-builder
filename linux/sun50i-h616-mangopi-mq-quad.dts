@@ -62,7 +62,7 @@
 /* unlike orange pi zero2, mq quad has no ethernet without mod. */
 
 &mmc0 {
-	vmmc-supply = <&reg_dcdce>;
+	vmmc-supply = <&reg_dldo1>;
 	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;	/* PF6 */
 	bus-width = <4>;
 	status = "okay";
@@ -84,7 +84,7 @@
 		interrupts = <6 15 IRQ_TYPE_LEVEL_LOW>; /* PG15 */
 		interrupt-names = "host-wake";
 	};
-}
+};
 
 &r_rsb {
 	status = "okay";
