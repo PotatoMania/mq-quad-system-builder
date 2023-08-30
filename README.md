@@ -2,7 +2,7 @@
 
 Nothing special, just scripts to build a system image for MQ Quad.
 
-Working progress.
+Working progress. Now ArchLinux boots on MQ Quad
 
 ## How to use
 
@@ -26,6 +26,19 @@ Now you have `u-boot/u-boot/u-boot-sunxi-with-spl.bin`. Write it to your target 
 dd if=u-boot-sunxi-with-spl.bin bs=8K seek=1 of=/dev/targetdisk
 ```
 
+_If you're using GPT partition tables, please shrink its size to below or equal to 56,_
+_so that u-boot won't be overwritten or vice-versa._
+_This can be done with gdisk's expert mode._
+_Read [sunxi community wiki](https://linux-sunxi.org/Bootable_SD_card#GPT_.28experimental.29) for more information._
+
 ### Build Linux
 
 WIP
+
+You just need to add the devicetree and create a config. Configuration is the hard part.
+
+Using EFI GRUB to boot the kernel is a validated method. You can also directly boot with u-boot, of course.
+
+```
+pacman -S base-devel
+```
