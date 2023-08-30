@@ -59,7 +59,14 @@
 };
 
 /* USB 2 & 3 are on MISC header. */
-/* unlike orange pi zero2, mq quad has no ethernet without mod. */
+
+// &ehci2 {
+// 	status = "okay";
+// };
+
+// &ehci3 {
+// 	status = "okay";
+// };
 
 &mmc0 {
 	vmmc-supply = <&reg_dldo1>;
@@ -86,14 +93,16 @@
 	};
 };
 
-&r_rsb {
+// Maybe RSB in I2C mode, since RSB is referred as r_rsb.
+// It's the same pins, but different peripheral, aka MUX.
+&r_i2c {
 	status = "okay";
 
-	axp313a: pmic@745 {
+	axp313a: pmic@36 {
 		compatible = "x-powers,axp313a";
-		interrupt-controller;
+		interrupt-controller;  // interrupt pin seems not connected
 		#interrupt-cells = <1>;
-		reg = <0x745>;
+		reg = <0x36>;
 
 		x-powers,self-working-mode;
 		vin1-supply = <&reg_vcc5v0>;
@@ -102,6 +111,7 @@
 
 		regulators {
 			reg_aldo1: aldo1 {
+				/* board 1v8 source */
 				regulator-always-on;
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <1800000>;
@@ -109,6 +119,7 @@
 			};
 
 			reg_dldo1: dldo1 {
+				/* board 3v3 source */
 				regulator-always-on;
 				regulator-min-microvolt = <3300000>;
 				regulator-max-microvolt = <3300000>;
