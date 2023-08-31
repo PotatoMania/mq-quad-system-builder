@@ -16,6 +16,7 @@
 	compatible = "mgcc,mangopi-mq-quad", "allwinner,sun50i-h616";
 
 	aliases {
+		ethernet0 = &rtl8723ds;
 		serial0 = &uart0;
 	};
 
