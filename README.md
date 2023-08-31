@@ -2,7 +2,17 @@
 
 Nothing special, just scripts to build a system image for MQ Quad.
 
-Working progress. Now ArchLinux boots on MQ Quad
+Working progress. Now ArchLinux boots on MQ Quad.
+
+## What you can find here for the moment
+
+- instructions, scripts and code to build a bootable u-boot(2023.10-rc3)
+- a simple device tree for linux-6.5
+
+Status:
+
+- Mainline u-boot boots.
+- Mainline linux boots, no video output(no HDMI driver).
 
 ## How to use
 
@@ -13,7 +23,7 @@ Please patch against u-boot commit `e508b930021168c788f14977fc101ccc1151b3c8`.
 Automatic patching WIP
 
 ```bash
-cd u-boot
+cd u-boot  # this is the u-boot folder in this project
 make prepare-code-atf
 make prepare-code-u-boot
 cd u-boot && git am ../patches/* && cd ..
